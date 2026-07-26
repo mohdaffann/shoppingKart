@@ -169,3 +169,83 @@ regardless of tree depth.
 - [ ] Fix missing/misplaced `key` props while touching these files anyway
 - [ ] Consider deriving `cartCount` from `items` instead of tracking it as
       separate state
+
+## v2 — Context API Version
+ 
+### Component Tree & Data Flow
+```
+main.tsx
+└── CartProvider          (owns: cart, setCart)
+    └── CartCountProvider (owns: cartCount, setCartCount)
+        └── App
+            ├── Header       (consumes: CartCountContext)
+            ├── ProductList
+            │   └── ProductCard  (consumes: CartContext, CartCountContext)
+            └── Cart          (consumes: CartContext)
+```
+ 
+The prop-drilling chain is gone: `ProductList` no longer forwards
+`items`/`setItems`/`setCartCount` to `ProductCard` — it doesn't even know
+those props exist anymore. `Header` and `Cart` pull what they need directly
+via `useContext`, regardless of how deep they sit in the tree. This is the
+concrete payoff of the refactor — go compare `ProductList` here to the v1
+version and notice it now only needs `setPage` (or nothing cart-related at
+all).
+ 
+### Two providers, not one
+The state was split into **two separate contexts**:
+- `CartContext` → `{ cart, setCart }`
+- `CartCountContext` → `{ cartCount, setCartCount }`
+nested in `main.tsx` as `CartProvider > CartCountProvider > App`.
+ 
+### Key snippet — provider shape
+```tsx
+export const CartContext = createContext<any>(null);
+ 
+export function CartProvider({ children }: any) {
+    const [cart, setCart] = useState([]);
+    return (
+        <CartContext.Provider value={{ cart, setCart }}>
+            {children}
+        </CartContext.Provider>
+    )
+}
+```
+Same pattern repeated for `CartCountContext` / `CartCountProvider`.
+ 
+### Key snippet — consuming context
+```tsx
+const { cart, setCart } = useContext(CartContext)
+const { setCartCount } = useContext(CartCountContext)
+```
+Any component, at any depth, that's inside both providers can pull exactly
+the slice of state it needs — no forwarding required.
+ 
+### Still carried over from v1 (unchanged by this refactor)
+Context API solves *where state lives / how it's accessed* — it does not
+automatically fix *what* the state is. These v1 issues are still here,
+just now living inside providers instead of `App`:
+ 
+1. **`cart` and `cartCount` are still two separate, manually-synced pieces
+   of state** — now in two *separate contexts* instead of two props. This
+   is arguably a bit riskier than v1: it's easier to update `setCart` in one
+   place and forget to touch `setCartCount` in another, because they're no
+   longer sitting next to each other in the same component's state. This is
+   the same "derive `cartCount` from `cart`" fix as before — just now it'd
+   most naturally live as a `useMemo` inside `CartProvider`, and you could
+   likely delete `CartCountContext` entirely.
+2. **`key={id}` inside `ProductCard`'s own return** is still not the same
+   as `key` on the `<ProductCard />` element in `ProductList`'s `.map()`.
+3. **`Cart`'s mapped `<div>` still has no `key`.**
+### Worth asking yourself as a learning exercise
+- Why two providers instead of one `CartContext` holding `{ cart, setCart,
+  cartCount, setCartCount }`? (Both are valid designs — the tradeoff is
+  re-render scope: components subscribed only to `CartCountContext`, like
+  `Header`, won't re-render when `cart` changes if they're separate. That's
+  a real reason to split contexts, not just extra boilerplate — but it only
+  pays off if `cart` updates frequently without `cartCount` needing to
+  reflect it, which isn't really true here since they change together.)
+- What breaks if a component calls `useContext(CartContext)` *outside* of
+  `CartProvider`? (Currently silently returns `null` since the default is
+  `createContext<any>(null)` — worth trying, then worth learning the
+  "throw if context is null" guard pattern for a future pass.)
