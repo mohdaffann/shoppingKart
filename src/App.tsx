@@ -6,15 +6,14 @@ import Cart from "./Cart"
 function App() {
 
   const [page, setpage] = useState('');
-  const [cartCount, setCartCount] = useState(0);
   const [items, setItems] = useState([]);
 
   return (
     <>
-      <Header setPage={setpage} cartCount={cartCount} />
-      {page === 'products' && <ProductList items={items} setItems={setItems} setCartCount={setCartCount} />}
+      <Header setPage={setpage} />
+      {page === 'products' && <ProductList />}
       {page === '' && <HomePage />}
-      {page === 'cart' && <Cart items={items} />}
+      {page === 'cart' && <Cart />}
     </>
   )
 }

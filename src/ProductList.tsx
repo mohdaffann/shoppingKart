@@ -6,7 +6,7 @@ interface Product {
     price: number
 }
 
-function ProductList({ setCartCount, items, setItems }: { setCartCount: any, items: any[], setItems: any }) {
+function ProductList() {
     const [prod, setProd] = useState<Product[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -38,7 +38,7 @@ function ProductList({ setCartCount, items, setItems }: { setCartCount: any, ite
             {loading ? <div>Loading...</div> :
                 prod.map((p) => (
                     <ProductCard id={p.id} price={p.price} title={p.title}
-                        setCartCount={setCartCount} items={items} setItems={setItems}
+
                     />
                 ))
             }

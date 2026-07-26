@@ -1,6 +1,8 @@
+import { useContext } from "react";
+import { CartCountContext } from "./context/CartCountContext";
 
-
-function Header({ setPage, cartCount }: { setPage: any, cartCount: number }) {
+function Header({ setPage }: { setPage: any }) {
+    const { cartCount, setCartCount } = useContext(CartCountContext)
     return (
         <header className="border-b bg-white shadow-sm">
             <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">

@@ -1,18 +1,21 @@
-import React from "react";
-
-function ProductCard({ id, price, title, setCartCount, items, setItems }: { id: number, price: number, title: string, setCartCount: any, items: any[], setItems: any }) {
+import React, { useContext } from "react";
+import { CartCountContext } from "./context/CartCountContext";
+import { CartContext } from "./context/CartContext";
+function ProductCard({ id, price, title }: { id: number, price: number, title: string }) {
+    const { cart, setCart } = useContext(CartContext)
+    const { setCartCount } = useContext(CartCountContext)
     function addItems() {
-        const existing = items.find(p => p.id === id)
+        const existing = cart.find((p: any) => p.id === id)
         if (existing) {
-            setItems(
-                items.map(item =>
+            setCart(
+                cart.map((item: any) =>
                     item.id === id ? { ...item, quantity: item.quantity + 1 } : item
                 )
             )
         } else {
-            setItems(
+            setCart(
                 [
-                    ...items,
+                    ...cart,
                     { id: id, price: price, title: title, quantity: 1 }
                 ]
             )
